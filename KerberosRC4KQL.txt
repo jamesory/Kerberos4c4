@@ -1,0 +1,11 @@
+SecurityEvent
+| where (EventID == 4768 or EventID == 4769)
+| parse EventData with * '"TicketEncryptionType">' TicketEncryptionType '<' *
+| where TicketEncryptionType != "0xffffffff"
+| parse EventData with * '"IpAddress">' Ip '<' *
+| parse EventData with * '"TargetUserName">' TargetUserName '<' *
+| parse EventData with * '"ServiceName">' ServiceName '<' *
+| extend IPAddress = substring(Ip, 7, 11)
+| extend Cipher=replace('0x18$', 'RC4-HMAC-EXP', replace('0x12$', 'AES256-CTS-HMAC-SHA1', replace('0x11$', 'AES128-CTS-HMAC-SHA1', replace('0x1$', 'DES_CBC_CRC', replace('0x2$', 'DES_CBC_MD4', replace('0x7$', 'DES3_CBC_SHA1', replace('0x5$', 'DES3_CBC_MD5', replace('0x3$', 'DES_CBC_MD5', replace('0x17$', 'RC4_HMAC', TicketEncryptionType)))))))))
+| project IPAddress, TargetUserName, ServiceName, Cipher, Computer
+| where Cipher contains "RC4"
